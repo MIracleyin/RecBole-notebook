@@ -23,7 +23,7 @@ class WideDeep(ContextRecommender):
     It jointly trains wide linear models and deep neural networks to combine the benefits
     of memorization and generalization for recommender systems. The wide component is a generalized linear model
     of the form :math:`y = w^Tx + b`. The deep component is a feed-forward neural network. The wide component
-    and deep component are combined using a weighted sum of their output log odds as the prediction,
+    and deep component are combined uself.mlp_layerssing a weighted sum of their output log odds as the prediction,
     which is then fed to one common logistic loss function for joint training.
     """
 

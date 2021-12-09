@@ -104,14 +104,6 @@ class TagBasedDataset(Dataset):
         super()._data_filtering()
         # self._filter_tag()
 
-    # def _filter_tag(self):
-    #     pass
-
-    # def _load_data(self, token, dataset_path):
-    #    super()._load_data(token, dataset_path)
-
-    # def _build_feat_name_list(self):
-    #     feat_name_list = super()._build_feat_name_list()
 
     def _data_processing(self):
         """Data preprocessing, including:
@@ -150,7 +142,10 @@ class TagBasedDataset(Dataset):
         """
         self._set_alias('tag_id', [self.tid_field])
         super()._init_alias()
-#        self._rest_fields = np.setdiff1d(self._rest_fields, [self.entity_field], assume_unique=True)
+
+    @property
+    def tag_entities(self):
+        return self.inter_feat[self.tag_field].to_numpy()
 
     def create_src_tgt_matrix(self, df_feat, source_field, target_field, is_weight=True):
         """Get sparse matrix that describe relations between two fields.
@@ -196,6 +191,31 @@ class TagBasedDataset(Dataset):
         #     return mat.tocsr()
         # else:
         #     raise NotImplementedError(f'Sparse matrix format [{form}] has not been implemented.')
+
+    def _create_ctg_sparse_matrix(self, form, show_tag):
+        user_num = self.user_num
+
+        uids = self.inter_feat[self.uid_field].numpy()
+        tids = self.inter_feat[self.tag_field].numpy() + user_num
+        
+
+
+
+    def _create_ctg_graph(self, form, show_tag):
+        pass
+
+    def ctg_graph(self, form='coo', value_field=None):
+        if value_field is not None and value_field != self.tid_field:
+            raise ValueError(f'Value_field [{value_field}] can only be [{self.tid_field}] in ctg_graph.')
+        show_tag = value_field is not None
+
+        if form in ['coo', 'csr']:
+            return
+        elif form in ['dgl', 'pyg']:
+            return
+        else:
+            raise NotImplementedError(f'ckg graph format [{form}] has not been implemented.')
+
 
     def inter_graph(self, form='dgl', value_field=None):
 
