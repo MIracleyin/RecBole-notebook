@@ -268,6 +268,7 @@ class HyperTuning(object):
                 fp.write('Test result:\n' + dict2str(self.params2result[params]['test_result']) + '\n\n')
             best_dict = self.params2result[self.params2str(self.best_params)]
             fp.write('#' * 40 + 'result' + '#' * 40 + '\n')
+            fp.write('Best params:\n' + dict2str(self.best_params) + '\n')
             fp.write('Valid result: \n' + dict2str(
                 self.params2result[self.params2str(self.best_params)]['best_valid_result'])  + '\n')
             fp.write('Test result: \n' + dict2str(
