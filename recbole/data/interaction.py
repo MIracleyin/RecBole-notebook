@@ -288,7 +288,7 @@ class Interaction(object):
             index: the new index of current interaction.
         """
         for k in self.interaction:
-            self.interaction[k] = self.interaction[k][index]
+            self.interaction[k] = self.interaction[k][index] # new idx shuffle
 
     def shuffle(self):
         """Shuffle current interaction inplace.
