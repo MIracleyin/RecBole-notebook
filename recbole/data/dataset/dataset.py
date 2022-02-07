@@ -461,7 +461,7 @@ class Dataset(object):
         """
         self._set_alias('user_id', [self.uid_field])
         self._set_alias('item_id', [self.iid_field])
-
+        # check alias, all alias should not have the same field
         for alias_name_1, alias_1 in self.alias.items():
             for alias_name_2, alias_2 in self.alias.items():
                 if alias_name_1 != alias_name_2:
@@ -472,7 +472,7 @@ class Dataset(object):
                             f'should not have the same field {list(intersect)}.'
                         )
 
-        self._rest_fields = self.token_like_fields
+        self._rest_fields = self.token_like_fields # all token like fields should
         for alias_name, alias in self.alias.items():
             isin = np.isin(alias, self._rest_fields, assume_unique=True)
             if isin.all() is False:
@@ -937,7 +937,7 @@ class Dataset(object):
                 tokens.append(feat[field].values)
             elif ftype == FeatureType.TOKEN_SEQ:
                 tokens.append(feat[field].agg(np.concatenate))
-        split_point = np.cumsum(list(map(len, tokens)))[:-1]
+        split_point = np.cumsum(list(map(len, tokens)))[:-1] # all remap list num
         tokens = np.concatenate(tokens)
         return tokens, split_point
 
@@ -952,15 +952,15 @@ class Dataset(object):
         tokens, split_point = self._concat_remaped_tokens(remap_list)
         new_ids_list, mp = pd.factorize(tokens)
         new_ids_list = np.split(new_ids_list + 1, split_point)
-        mp = np.array(['[PAD]'] + list(mp))
-        token_id = {t: i for i, t in enumerate(mp)}
+        mp = np.array(['[PAD]'] + list(mp)) # mp is raw name
+        token_id = {t: i for i, t in enumerate(mp)} # a map from raw name to token
 
         for (feat, field, ftype), new_ids in zip(remap_list, new_ids_list):
             if field not in self.field2id_token:
                 self.field2id_token[field] = mp
                 self.field2token_id[field] = token_id
             if ftype == FeatureType.TOKEN:
-                feat[field] = new_ids
+                feat[field] = new_ids # use new ids
             elif ftype == FeatureType.TOKEN_SEQ:
                 split_point = np.cumsum(feat[field].agg(len))[:-1]
                 feat[field] = np.split(new_ids, split_point)
@@ -1384,7 +1384,7 @@ class Dataset(object):
 
         self._drop_unused_col()
         next_df = [self.inter_feat[index] for index in next_index]
-        next_ds = [self.copy(_) for _ in next_df]
+        next_ds = [self.copy(_) for _ in next_df] # using inter feat rebuild dataset
         return next_ds
 
     def _split_index_by_leave_one_out(self, grouped_index, leave_one_num):
@@ -1463,7 +1463,7 @@ class Dataset(object):
         Returns:
             list: List of built :class:`Dataset`.
         """
-        self._change_feat_format()
+        self._change_feat_format() # pandas to torch
 
         if self.benchmark_filename_list is not None:
             cumsum = list(np.cumsum(self.file_size_list))
@@ -1603,9 +1603,22 @@ class Dataset(object):
         src = tensor_feat[source_field]
         tgt = tensor_feat[target_field]
 
+        if value_field is None:
+            data = np.ones(len(tensor_feat))
+        else:
+            if value_field not in tensor_feat: # ?
+                raise ValueError(f'Value_field [{value_field}] should be one of `df_feat`\'s features.')
+            data = tensor_feat[value_field]
+
         if form == 'dgl':
             import dgl
-            graph = dgl.graph((src, tgt))
+            coo_adj_graph = coo_matrix((data, (src, tgt)), shape=(self.num(source_field), self.num(target_field)))
+            graph = dgl.DGLGraph()
+            num_nodes = coo_adj_graph.shape[0]
+            graph.add_nodes(num_nodes)
+            graph.ndata['feature'] = torch.arange(num_nodes)
+            graph.add_edges(coo_adj_graph.row, coo_adj_graph.col)
+            graph.add_edges(graph.nodes(), graph.nodes())
             if value_field is not None:
                 if isinstance(value_field, str):
                     value_field = {value_field}

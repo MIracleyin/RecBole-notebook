@@ -384,7 +384,7 @@ class KnowledgeBasedDataset(Dataset):
         kg_tensor = self.kg_feat
         inter_tensor = self.inter_feat
 
-        head_entity = kg_tensor[self.head_entity_field] + user_num
+        head_entity = kg_tensor[self.head_entity_field] + user_num # item kg entity in same id space
         tail_entity = kg_tensor[self.tail_entity_field] + user_num
 
         user = inter_tensor[self.uid_field]

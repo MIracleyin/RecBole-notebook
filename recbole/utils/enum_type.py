@@ -26,6 +26,7 @@ class ModelType(Enum):
     KNOWLEDGE = 4
     TRADITIONAL = 5
     DECISIONTREE = 6
+    TAG = 7
 
 
 class KGDataLoaderState(Enum):
@@ -98,3 +99,4 @@ class FeatureSource(Enum):
     ITEM_ID = 'item_id'
     KG = 'kg'
     NET = 'net'
+    ASSIGN = 'assign'

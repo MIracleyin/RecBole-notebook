@@ -127,12 +127,12 @@ class KGAT(KnowledgeRecommender):
         import dgl
         adj_list = []
         for rel_type in range(1, self.n_relations, 1):
-            edge_idxs = self.ckg.filter_edges(lambda edge: edge.data['relation_id'] == rel_type)
+            edge_idxs = self.ckg.filter_edges(lambda edge: edge.data['relation_id'] == rel_type) # filter specific relation link edge idx
             sub_graph = dgl.edge_subgraph(self.ckg, edge_idxs, preserve_nodes=True). \
                 adjacency_matrix(transpose=False, scipy_fmt='coo').astype('float')
             rowsum = np.array(sub_graph.sum(1))
             d_inv = np.power(rowsum, -1).flatten()
-            d_inv[np.isinf(d_inv)] = 0.
+            d_inv[np.isinf(d_inv)] = 0. # inf to float 0.
             d_mat_inv = sp.diags(d_inv)
             norm_adj = d_mat_inv.dot(sub_graph).tocoo()
             adj_list.append(norm_adj)

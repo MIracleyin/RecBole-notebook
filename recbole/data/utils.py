@@ -45,6 +45,9 @@ def create_dataset(config):
         elif model_type == ModelType.DECISIONTREE:
             from .dataset import DecisionTreeDataset
             return DecisionTreeDataset(config)
+        elif model_type == ModelType.TAG:
+            from .dataset import TagBasedDataset
+            return TagBasedDataset(config)
         else:
             from .dataset import Dataset
             return Dataset(config)
