@@ -18,6 +18,7 @@ Customized datasets named ``[Model Name]Dataset`` can be automatically called.
 
 import numpy as np
 import torch
+import os
 
 from recbole.data.dataset import KGSeqDataset, SequentialDataset
 from recbole.data.interaction import Interaction
@@ -28,6 +29,7 @@ from recbole.utils import FeatureSource, FeatureType, get_local_time, set_color
 import pandas as pd
 from scipy.sparse import coo_matrix
 from collections import Counter, defaultdict
+
 
 class TagBasedDataset(Dataset):
     """:class:`TagBasedDataset` is based on :`~recbole.data.dataset.dataset.Dataset`,
@@ -55,14 +57,56 @@ class TagBasedDataset(Dataset):
             )
         self.logger.debug(set_color('tid_field', 'blue') + f': {self.tid_field}')
 
+    def _load_data(self, token, dataset_path):
+        """Load features.
+        Firstly load interaction features, then user/item features optionally,
+                finally load additional features if ``config['additional_feat_suffix']`` is set.
+
+        load assignment more
+
+        Args:
+            token (str): dataset name.
+            dataset_path (str): path of dataset dir.
+        """
+        super()._load_data(token, dataset_path)
+        assign_dicts = self._load_assign(self.dataset_name, dataset_path)
+        self.user2tag, self.tag2user, self.item2tag, self.tag2item = assign_dicts
+
+    def _load_assign(self, token, dataset_path):
+        self.logger.debug(set_color(f'Loading assign from [{dataset_path}].', 'green'))
+        assign_feat_path = os.path.join(dataset_path, f'{token}.assign')
+        if not os.path.isfile(assign_feat_path):
+            raise ValueError(f'[{token}.assign] not exists.')
+        assign_feat = self._load_feat(assign_feat_path, FeatureSource.ASSIGN)
+        self._check_assign(assign_feat)
+        self.logger.debug(f'Interaction feature loaded successfully from [{assign_feat_path}].')
+        self.assign_feat = assign_feat
+
+        user2tag, tag2user = {}, {}
+        item2tag, tag2item = {}, {}
+        for user_id, item_id, tag_id in zip(assign_feat[self.uid_field], assign_feat[self.iid_field], assign_feat[self.tid_field]):
+            user2tag[user_id] = tag_id
+            tag2user[tag_id] = user_id
+            item2tag[item_id] = tag_id
+            tag2item[tag_id] = item_id
+
+        return (user2tag, tag2user, item2tag, tag2item)
+
+    def _check_assign(self, assign):
+        tag_warn_message = 'assign data requires field [{}]'
+        assert self.tid_field in assign, tag_warn_message.format(self.tid_field)
+        assert self.uid_field in assign, tag_warn_message.format(self.uid_field)
+        assert self.iid_field in assign, tag_warn_message.format(self.iid_field)
+
+
     def _data_filtering(self):
-         super()._data_filtering()
-         # self._filter_tag()
+        super()._data_filtering()
+        # self._filter_tag()
 
     # def _filter_tag(self):
     #     pass
 
-    #def _load_data(self, token, dataset_path):
+    # def _load_data(self, token, dataset_path):
     #    super()._load_data(token, dataset_path)
 
     # def _build_feat_name_list(self):
@@ -105,6 +149,7 @@ class TagBasedDataset(Dataset):
         """
         self._set_alias('tag_id', [self.tid_field])
         super()._init_alias()
+        self._rest_fields = np.setdiff1d(self._rest_fields, [self.entity_field], assume_unique=True)
 
     def create_src_tgt_matrix(self, df_feat, source_field, target_field, is_weight=True):
         """Get sparse matrix that describe relations between two fields.
@@ -141,7 +186,9 @@ class TagBasedDataset(Dataset):
             data = df_feat['weights']
         else:
             data = np.ones(len(df_feat))
-        mat = coo_matrix((data, (src, tgt)), shape=(self.num(source_field), self.num(target_field)))
+        # mat_size = self.num(source_field) + self.num(target_field) #
+        mat_size = len(set(src)) + len(set(tgt))
+        mat = coo_matrix((data, (src, tgt)), shape=(mat_size, mat_size)) # ex: user tag mat, size is number of user + tag
         return mat
         # if form == 'coo':
         #     return mat
@@ -172,10 +219,11 @@ class TagBasedDataset(Dataset):
         Returns:
              numpy.float64: Average number of tags' interaction records.
         """
-        if isinstance(self.inter_feat, pd.DataFrame):
-            return np.mean(self.inter_feat.groupby(self.tid_field).size())
+        if isinstance(self.assign_feat, pd.DataFrame):
+            return np.mean(self.assign_feat.groupby(self.tid_field).size())
         else:
-            return np.mean(list(Counter(self.inter_feat[self.tid_field].numpy()).values()))
+            return np.mean(list(Counter(self.assign_feat[self.tid_field].numpy()).values()))
+
 
 class GRU4RecKGDataset(KGSeqDataset):
 

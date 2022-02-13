@@ -940,7 +940,7 @@ class Dataset:
             - split points that can be used to restore the concatenated tokens.
         """
         tokens = []
-        for feat, field, ftype in remap_list:
+        for feat, field, ftype in remap_list: # ftype [ token or seq] : value = feat[field]
             if ftype == FeatureType.TOKEN:
                 tokens.append(feat[field].values)
             elif ftype == FeatureType.TOKEN_SEQ:
