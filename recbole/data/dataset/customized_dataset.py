@@ -69,28 +69,29 @@ class TagBasedDataset(Dataset):
             dataset_path (str): path of dataset dir.
         """
         super()._load_data(token, dataset_path)
-        assign_dicts = self._load_assign(self.dataset_name, dataset_path)
-        self.user2tag, self.tag2user, self.item2tag, self.tag2item = assign_dicts
+        # assign_dicts = self._load_assign(self.inter_feat)
+        # self.user2tag, self.tag2user, self.item2tag, self.tag2item = assign_dicts
 
-    def _load_assign(self, token, dataset_path):
-        self.logger.debug(set_color(f'Loading assign from [{dataset_path}].', 'green'))
-        assign_feat_path = os.path.join(dataset_path, f'{token}.assign')
-        if not os.path.isfile(assign_feat_path):
-            raise ValueError(f'[{token}.assign] not exists.')
-        assign_feat = self._load_feat(assign_feat_path, FeatureSource.ASSIGN)
-        self._check_assign(assign_feat)
-        self.logger.debug(f'Interaction feature loaded successfully from [{assign_feat_path}].')
-        self.assign_feat = assign_feat
+    def _load_assign(self, feat):
+        """
+        from inter_feat get user-tag item-tag feat
+        :param feat:
+        :return:
+        """
+        pass
+        # self.user_tag_feat = pd.DataFrame(feat, columns=['user_id', 'tag_id'])
+        # self.item_tag_feat = pd.DataFrame(feat, columns=['item_id', 'tag_id'])
 
-        user2tag, tag2user = {}, {}
-        item2tag, tag2item = {}, {}
-        for user_id, item_id, tag_id in zip(assign_feat[self.uid_field], assign_feat[self.iid_field], assign_feat[self.tid_field]):
-            user2tag[user_id] = tag_id
-            tag2user[tag_id] = user_id
-            item2tag[item_id] = tag_id
-            tag2item[tag_id] = item_id
-
-        return (user2tag, tag2user, item2tag, tag2item)
+        # may have more link so
+        # user2tag, tag2user = {}, {}
+        # item2tag, tag2item = {}, {}
+        # for user_id, item_id, tag_id in zip(feat[self.uid_field].values, feat[self.iid_field].values, feat[self.tid_field].values):
+        #     user2tag[user_id] = tag_id
+        #     tag2user[tag_id] = user_id
+        #     item2tag[item_id] = tag_id
+        #     tag2item[tag_id] = item_id
+        #
+        # return (user2tag, tag2user, item2tag, tag2item)
 
     def _check_assign(self, assign):
         tag_warn_message = 'assign data requires field [{}]'
@@ -149,7 +150,7 @@ class TagBasedDataset(Dataset):
         """
         self._set_alias('tag_id', [self.tid_field])
         super()._init_alias()
-        self._rest_fields = np.setdiff1d(self._rest_fields, [self.entity_field], assume_unique=True)
+#        self._rest_fields = np.setdiff1d(self._rest_fields, [self.entity_field], assume_unique=True)
 
     def create_src_tgt_matrix(self, df_feat, source_field, target_field, is_weight=True):
         """Get sparse matrix that describe relations between two fields.
@@ -177,7 +178,7 @@ class TagBasedDataset(Dataset):
                 df_feat = pd.DataFrame.from_dict(df_feat.interaction)
             except BaseException:
                 raise ValueError(f'feat from is not supported.')
-        df_feat = df_feat.groupby([source_field, target_field]).size()
+        df_feat = df_feat.groupby([source_field, target_field]).size() # 这样会合并相同的边
         df_feat.name = 'weights'
         df_feat = df_feat.reset_index()
         src = df_feat[source_field]
@@ -187,8 +188,7 @@ class TagBasedDataset(Dataset):
         else:
             data = np.ones(len(df_feat))
         # mat_size = self.num(source_field) + self.num(target_field) #
-        mat_size = len(set(src)) + len(set(tgt))
-        mat = coo_matrix((data, (src, tgt)), shape=(mat_size, mat_size)) # ex: user tag mat, size is number of user + tag
+        mat = coo_matrix((data, (src, tgt)), shape=(self.num(source_field), self.num(target_field)))
         return mat
         # if form == 'coo':
         #     return mat
@@ -219,10 +219,10 @@ class TagBasedDataset(Dataset):
         Returns:
              numpy.float64: Average number of tags' interaction records.
         """
-        if isinstance(self.assign_feat, pd.DataFrame):
-            return np.mean(self.assign_feat.groupby(self.tid_field).size())
+        if isinstance(self.inter_feat, pd.DataFrame):
+            return np.mean(self.inter_feat.groupby(self.tid_field).size())
         else:
-            return np.mean(list(Counter(self.assign_feat[self.tid_field].numpy()).values()))
+            return np.mean(list(Counter(self.inter_feat[self.tid_field].numpy()).values()))
 
 
 class GRU4RecKGDataset(KGSeqDataset):
