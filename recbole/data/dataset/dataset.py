@@ -475,7 +475,7 @@ class Dataset:
                             f'should not have the same field {list(intersect)}.'
                         )
 
-        self._rest_fields = self.token_like_fields # all token like fields should
+        self._rest_fields = self.token_like_fields  # all token like fields should
         for alias_name, alias in self.alias.items():
             isin = np.isin(alias, self._rest_fields, assume_unique=True)
             if isin.all() is False:
@@ -940,12 +940,12 @@ class Dataset:
             - split points that can be used to restore the concatenated tokens.
         """
         tokens = []
-        for feat, field, ftype in remap_list: # ftype [ token or seq] : value = feat[field]
+        for feat, field, ftype in remap_list:  # ftype [ token or seq] : value = feat[field]
             if ftype == FeatureType.TOKEN:
                 tokens.append(feat[field].values)
             elif ftype == FeatureType.TOKEN_SEQ:
                 tokens.append(feat[field].agg(np.concatenate))
-        split_point = np.cumsum(list(map(len, tokens)))[:-1] # all remap list num
+        split_point = np.cumsum(list(map(len, tokens)))[:-1]  # all remap list num
         tokens = np.concatenate(tokens)
         return tokens, split_point
 
@@ -960,15 +960,15 @@ class Dataset:
         tokens, split_point = self._concat_remaped_tokens(remap_list)
         new_ids_list, mp = pd.factorize(tokens)
         new_ids_list = np.split(new_ids_list + 1, split_point)
-        mp = np.array(['[PAD]'] + list(mp)) # mp is raw name
-        token_id = {t: i for i, t in enumerate(mp)} # a map from raw name to token
+        mp = np.array(['[PAD]'] + list(mp))  # mp is raw name
+        token_id = {t: i for i, t in enumerate(mp)}  # a map from raw name to token
 
         for (feat, field, ftype), new_ids in zip(remap_list, new_ids_list):
             if field not in self.field2id_token:
-                self.field2id_token[field] = mp
-                self.field2token_id[field] = token_id
+                self.field2id_token[field] = mp # get id give token
+                self.field2token_id[field] = token_id # get token give id
             if ftype == FeatureType.TOKEN:
-                feat[field] = new_ids # use new ids
+                feat[field] = new_ids  # use new ids
             elif ftype == FeatureType.TOKEN_SEQ:
                 split_point = np.cumsum(feat[field].agg(len))[:-1]
                 feat[field] = np.split(new_ids, split_point)
@@ -1392,7 +1392,7 @@ class Dataset:
 
         self._drop_unused_col()
         next_df = [self.inter_feat[index] for index in next_index]
-        next_ds = [self.copy(_) for _ in next_df] # using inter feat rebuild dataset
+        next_ds = [self.copy(_) for _ in next_df]  # using inter feat rebuild dataset
         return next_ds
 
     def _split_index_by_leave_one_out(self, grouped_index, leave_one_num):
@@ -1471,7 +1471,7 @@ class Dataset:
         Returns:
             list: List of built :class:`Dataset`.
         """
-        self._change_feat_format() # pandas to torch
+        self._change_feat_format()  # pandas to torch
 
         if self.benchmark_filename_list is not None:
             cumsum = list(np.cumsum(self.file_size_list))
@@ -1616,7 +1616,7 @@ class Dataset:
         if value_field is None:
             data = np.ones(len(tensor_feat))
         else:
-            if value_field not in tensor_feat: # ?
+            if value_field not in tensor_feat:  # ?
                 raise ValueError(f'Value_field [{value_field}] should be one of `df_feat`\'s features.')
             data = tensor_feat[value_field]
 
