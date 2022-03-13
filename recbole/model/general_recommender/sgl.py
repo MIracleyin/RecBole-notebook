@@ -127,7 +127,8 @@ class SGL(GeneralRecommender):
 
                 user, item = res.nonzero()
                 ratings = res.data
-                matrix = sp.csr_matrix((ratings, (user, item + self.n_users)), shape=(self.n_users + self.n_items, self.n_users + self.n_items))
+                matrix = sp.csr_matrix((ratings, (user, item + self.n_users)),
+                                       shape=(self.n_users + self.n_items, self.n_users + self.n_items))
 
             elif self.type == "ED" or self.type == "RW":
                 keep_item = self.rand_sample(
@@ -181,15 +182,15 @@ class SGL(GeneralRecommender):
     def calculate_loss(self, interaction):
         if self.restore_user_e is not None or self.restore_item_e is not None:
             self.restore_user_e, self.restore_item_e = None, None
-        
+
         user_list = interaction[self.USER_ID]
         pos_item_list = interaction[self.ITEM_ID]
         neg_item_list = interaction[self.NEG_ITEM_ID]
         user_emd, item_emd = self.forward(self.train_graph)
         user_sub1, item_sub1 = self.forward(self.sub_graph1)
         user_sub2, item_sub2 = self.forward(self.sub_graph2)
-        total_loss = self.calc_bpr_loss(user_emd,item_emd,user_list,pos_item_list,neg_item_list) + \
-            self.calc_ssl_loss(user_list,pos_item_list,user_sub1,user_sub2,item_sub1,item_sub2)
+        total_loss = self.calc_bpr_loss(user_emd, item_emd, user_list, pos_item_list, neg_item_list) + \
+                     self.calc_ssl_loss(user_list, pos_item_list, user_sub1, user_sub2, item_sub1, item_sub2)
         return total_loss
 
     def calc_bpr_loss(self, user_emd, item_emd, user_list, pos_item_list, neg_item_list):
@@ -238,7 +239,7 @@ class SGL(GeneralRecommender):
 
         u_emd1 = F.normalize(user_sub1[user_list], dim=1)
         u_emd2 = F.normalize(user_sub2[user_list], dim=1)
-        all_user2 = F.normalize(user_sub2,dim=1)
+        all_user2 = F.normalize(user_sub2, dim=1)
         v1 = torch.sum(u_emd1 * u_emd2, dim=1)
         v2 = u_emd1.matmul(all_user2.T)
         v1 = torch.exp(v1 / self.ssl_tau)
@@ -247,7 +248,7 @@ class SGL(GeneralRecommender):
 
         i_emd1 = F.normalize(item_sub1[pos_item_list], dim=1)
         i_emd2 = F.normalize(item_sub2[pos_item_list], dim=1)
-        all_item2 = F.normalize(item_sub2,dim=1)
+        all_item2 = F.normalize(item_sub2, dim=1)
         v3 = torch.sum(i_emd1 * i_emd2, dim=1)
         v4 = i_emd1.matmul(all_item2.T)
         v3 = torch.exp(v3 / self.ssl_tau)
@@ -267,7 +268,7 @@ class SGL(GeneralRecommender):
     def full_sort_predict(self, interaction):
         if self.restore_user_e is None or self.restore_item_e is None:
             self.restore_user_e, self.restore_item_e = self.forward(self.train_graph)
-        
+
         user = self.restore_user_e[interaction[self.USER_ID]]
         return user.matmul(self.restore_item_e.T)
 
