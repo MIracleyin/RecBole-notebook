@@ -145,14 +145,17 @@ class HyperTuning(object):
             params_file=None,
             params_dict=None,
             fixed_config_file_list=None,
+            comments=None,
             algo='exhaustive',
-            max_evals=100
+            max_evals=100,
+
     ):
         self.best_score = None
         self.best_params = None
         self.best_test_result = None
         self.params2result = {}
 
+        self.comments = comments
         self.objective_function = objective_function
         self.max_evals = max_evals
         self.fixed_config_file_list = fixed_config_file_list
@@ -285,7 +288,7 @@ class HyperTuning(object):
         config_dict = params.copy()
         params_str = self.params2str(params)
         print('running parameters:', config_dict)
-        result_dict = self.objective_function(config_dict, self.fixed_config_file_list)
+        result_dict = self.objective_function(config_dict, self.fixed_config_file_list, self.comments)
         self.params2result[params_str] = result_dict
         score, bigger = result_dict['best_valid_score'], result_dict['valid_score_bigger']
 
